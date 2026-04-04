@@ -91,20 +91,46 @@ const baseQuantities = [
 ];
 
 const derivedQuantities = [
-  { name: "속력", expression: "m / s", unit: "m/s", explanation: "단위 시간 동안 이동한 거리", detail: "v = Δx / Δt", answer: ["길이", "시간"] },
-  { name: "가속도", expression: "m / s²", unit: "m/s²", explanation: "단위 시간마다 속력이 변하는 정도", detail: "a = Δv / Δt", answer: ["길이", "시간"] },
-  { name: "진동수", expression: "1 / s", unit: "Hz", explanation: "1초 동안 반복되는 횟수", detail: "f = 1 / T", answer: ["시간"] },
-  { name: "힘", expression: "kg × m / s²", unit: "N", explanation: "물체의 운동 상태를 바꾸는 상호작용", detail: "F = ma", answer: ["질량", "길이", "시간"] },
-  { name: "에너지", expression: "kg × m² / s²", unit: "J", explanation: "일을 할 수 있는 능력", detail: "W = Fd, Ek = 1/2 mv²", answer: ["질량", "길이", "시간"] },
-  { name: "일률(=전력)", expression: "kg × m² / s³", unit: "W", explanation: "단위 시간당 전달되거나 소비되는 에너지", detail: "P = W / t = VI", answer: ["질량", "길이", "시간"] },
-  { name: "전하량", expression: "A × s", unit: "C", explanation: "전기의 양", detail: "Q = It", answer: ["전류", "시간"] },
-  { name: "전압", expression: "kg × m² / (s³ × A)", unit: "V", explanation: "전하 1 C당 주어지는 에너지", detail: "V = W / Q", answer: ["질량", "길이", "시간", "전류"] },
-  { name: "전기용량", expression: "A² × s⁴ / (kg × m²)", unit: "F", explanation: "전하를 저장하는 능력", detail: "C = Q / V", answer: ["질량", "길이", "시간", "전류"] },
-  { name: "전기저항", expression: "kg × m² / (s³ × A²)", unit: "Ω", explanation: "전류의 흐름을 방해하는 정도", detail: "R = V / I", answer: ["질량", "길이", "시간", "전류"] },
-  { name: "밀도", expression: "kg / m³", unit: "kg/m³", explanation: "단위 부피당 질량", detail: "ρ = m / V", answer: ["질량", "길이"] },
-  { name: "압력", expression: "kg / (m × s²)", unit: "Pa", explanation: "단위 면적당 작용하는 힘", detail: "p = F / A", answer: ["질량", "길이", "시간"] },
-  { name: "자기선속", expression: "kg × m² / (s² × A)", unit: "Wb", explanation: "어떤 면을 통과하는 자기장의 총량", detail: "Φ = BA cosθ", answer: ["질량", "길이", "시간", "전류"] },
-  { name: "자기장", expression: "kg / (s² × A)", unit: "T", explanation: "자기 작용의 세기를 나타내는 물리량", detail: "B = F / (Iℓ) 또는 Φ / A", answer: ["질량", "시간", "전류"] },
+  { name: "넓이", expression: "m²", unit: "m²", explanation: "평면의 크기", detail: "A = l × w", altUnits: "없음", answer: ["길이"] },
+  { name: "부피", expression: "m³", unit: "m³", explanation: "공간의 크기", detail: "V = l × w × h", altUnits: "없음", answer: ["길이"] },
+  { name: "속력", expression: "m / s", unit: "m/s", explanation: "단위 시간 동안 이동한 거리", detail: "v = Δx / Δt", altUnits: "없음", answer: ["길이", "시간"] },
+  { name: "가속도", expression: "m / s²", unit: "m/s²", explanation: "단위 시간마다 속력이 변하는 정도", detail: "a = Δv / Δt", altUnits: "없음", answer: ["길이", "시간"] },
+  { name: "진동수", expression: "1 / s", unit: "Hz", explanation: "1초 동안 반복되는 횟수", detail: "f = 1 / T", altUnits: "Hz = s⁻¹", answer: ["시간"] },
+  { name: "힘", expression: "kg × m / s²", unit: "N", explanation: "물체의 운동 상태를 바꾸는 상호작용", detail: "F = ma", altUnits: "N = kg·m/s²", answer: ["질량", "길이", "시간"] },
+  { name: "에너지", expression: "kg × m² / s²", unit: "J", explanation: "일을 할 수 있는 능력", detail: "W = Fd, Ek = 1/2 mv²", altUnits: "J = N·m", answer: ["질량", "길이", "시간"] },
+  { name: "일률(=전력)", expression: "kg × m² / s³", unit: "W", explanation: "단위 시간당 전달되거나 소비되는 에너지", detail: "P = W / t = VI", altUnits: "W = J/s = V·A", answer: ["질량", "길이", "시간"] },
+  { name: "전하량", expression: "A × s", unit: "C", explanation: "전기의 양", detail: "Q = It", altUnits: "C = A·s", answer: ["전류", "시간"] },
+  { name: "전압", expression: "kg × m² / (s³ × A)", unit: "V", explanation: "전하 1 C당 주어지는 에너지", detail: "V = W / Q", altUnits: "V = J/C = W/A", answer: ["질량", "길이", "시간", "전류"] },
+  { name: "전기용량", expression: "A² × s⁴ / (kg × m²)", unit: "F", explanation: "전하를 저장하는 능력", detail: "C = Q / V", altUnits: "F = C/V", answer: ["질량", "길이", "시간", "전류"] },
+  { name: "전기저항", expression: "kg × m² / (s³ × A²)", unit: "Ω", explanation: "전류의 흐름을 방해하는 정도", detail: "R = V / I", altUnits: "Ω = V/A", answer: ["질량", "길이", "시간", "전류"] },
+  { name: "밀도", expression: "kg / m³", unit: "kg/m³", explanation: "단위 부피당 질량", detail: "ρ = m / V", altUnits: "없음", answer: ["질량", "길이"] },
+  { name: "몰농도", expression: "mol / m³", unit: "mol/m³", explanation: "단위 부피당 용질의 몰수", detail: "c = n / V", altUnits: "없음", answer: ["물질의 양", "길이"] },
+  { name: "압력", expression: "kg / (m × s²)", unit: "Pa", explanation: "단위 면적당 작용하는 힘", detail: "p = F / A", altUnits: "Pa = N/m²", answer: ["질량", "길이", "시간"] },
+  { name: "자기선속", expression: "kg × m² / (s² × A)", unit: "Wb", explanation: "어떤 면을 통과하는 자기장의 총량", detail: "Φ = BA cosθ", altUnits: "Wb = V·s = T·m²", answer: ["질량", "길이", "시간", "전류"] },
+  { name: "자기장", expression: "kg / (s² × A)", unit: "T", explanation: "자기 작용의 세기를 나타내는 물리량", detail: "B = F / (Iℓ) 또는 Φ / A", altUnits: "T = Wb/m² = N/(A·m)", answer: ["질량", "시간", "전류"] },
+  { name: "광휘도", expression: "cd / m²", unit: "cd/m²", explanation: "단위 면적당 특정 방향으로 나가는 빛의 세기", detail: "L = Iv / A", altUnits: "없음", answer: ["광도", "길이"] },
+];
+
+const tileChoices = ["m", "m²", "m³", "kg", "s", "s²", "s³", "s⁴", "A", "A²", "mol", "cd", "*", "/", "(", ")"];
+
+const tileGameTargets = [
+  { name: "넓이", answer: "m²" },
+  { name: "부피", answer: "m³" },
+  { name: "속력", answer: "m/s" },
+  { name: "가속도", answer: "m/s²" },
+  { name: "힘", answer: "kg*m/s²" },
+  { name: "에너지", answer: "kg*m²/s²" },
+  { name: "일률(=전력)", answer: "kg*m²/s³" },
+  { name: "전하량", answer: "A*s" },
+  { name: "전압", answer: "kg*m²/(s³*A)" },
+  { name: "전기용량", answer: "A²*s⁴/(kg*m²)" },
+  { name: "전기저항", answer: "kg*m²/(s³*A²)" },
+  { name: "밀도", answer: "kg/m³" },
+  { name: "몰농도", answer: "mol/m³" },
+  { name: "압력", answer: "kg/(m*s²)" },
+  { name: "자기선속", answer: "kg*m²/(s²*A)" },
+  { name: "자기장", answer: "kg/(s²*A)" },
+  { name: "광휘도", answer: "cd/m²" },
 ];
 
 const difficultyModes = {
@@ -149,13 +175,13 @@ function saveState(nickname, highScores) {
 function buildPrompt(type, target) {
   switch (type) {
     case "unit-to-name":
-      return { label: "단위", value: target.unit, secondaryLabel: "기본량 단위 표현", secondaryValue: target.expression };
+      return { label: "단위", value: target.unit, secondaryLabel: "기본량 단위 표현", secondaryValue: target.expression, altLabel: "허용되는 다른 표현", altValue: target.altUnits };
     case "name-to-unit":
-      return { label: "유도량", value: target.name, secondaryLabel: "정밀 표현", secondaryValue: target.detail };
+      return { label: "유도량", value: target.name, secondaryLabel: "정밀 표현", secondaryValue: target.detail, altLabel: "허용되는 다른 표현", altValue: target.altUnits };
     case "detail-to-name":
-      return { label: "관계식/정밀 표현", value: target.detail, secondaryLabel: "설명", secondaryValue: target.explanation };
+      return { label: "관계식/정밀 표현", value: target.detail, secondaryLabel: "설명", secondaryValue: target.explanation, altLabel: "허용되는 다른 표현", altValue: target.altUnits };
     default:
-      return { label: "기본량 단위 표현", value: target.expression, secondaryLabel: "단위", secondaryValue: target.unit };
+      return { label: "기본량 단위 표현", value: target.expression, secondaryLabel: "단위", secondaryValue: target.unit, altLabel: "허용되는 다른 표현", altValue: target.altUnits };
   }
 }
 
@@ -175,6 +201,14 @@ function makeMatchRound(size = 10) {
   return shuffle(derivedQuantities).slice(0, Math.min(size, derivedQuantities.length));
 }
 
+function makeTileRound(size = 8) {
+  return shuffle(tileGameTargets).slice(0, Math.min(size, tileGameTargets.length));
+}
+
+function normalizeExpression(text) {
+  return text.replace(/\s+/g, "").replace(/[×·]/g, "*");
+}
+
 function runDataTests() {
   if (baseQuantities.length !== 7) throw new Error("기본량은 7개여야 합니다.");
   if (new Set(baseQuantities.map((item) => item.name)).size !== baseQuantities.length) throw new Error("기본량 이름 중복");
@@ -186,9 +220,14 @@ function runDataTests() {
   });
   const sampleRound = makeMatchRound(10);
   if (sampleRound.length !== 10) throw new Error("조합 게임 문제 수 오류");
+  const sampleTileRound = makeTileRound(5);
+  if (sampleTileRound.length !== 5) throw new Error("타일 게임 문제 수 오류");
   if (!arraysEqualAsSets(["길이", "시간"], ["시간", "길이"])) throw new Error("집합 비교 오류");
   if (!derivedQuantities.every((item) => Array.isArray(item.answer) && item.answer.length >= 1)) {
     throw new Error("정답 데이터 오류");
+  }
+  if (!tileGameTargets.every((item) => typeof item.answer === "string" && item.answer.length > 0)) {
+    throw new Error("타일 게임 정답 데이터 오류");
   }
 }
 
@@ -294,7 +333,15 @@ function StatPill({ label }) {
   return <div style={{ padding: "6px 10px", borderRadius: 999, border: "1px solid #cbd5e1", fontSize: 12, fontWeight: 700 }}>{label}</div>;
 }
 
-function GameQuiz({ modeKey, onFinish }) {
+function HomeButton({ onHome }) {
+  return (
+    <button onClick={onHome} style={{ ...buttonBase }}>
+      홈으로
+    </button>
+  );
+}
+
+function GameQuiz({ modeKey, onFinish, onHome }) {
   const mode = difficultyModes[modeKey] ?? difficultyModes.AB;
   const maxRounds = 20;
   const [question, setQuestion] = useState(() => makeQuizQuestion(modeKey));
@@ -317,6 +364,7 @@ function GameQuiz({ modeKey, onFinish }) {
           unit: question.target.unit,
           expression: question.target.expression,
           detail: question.target.detail,
+          altUnits: question.target.altUnits,
           reason: "시간 초과",
         },
       ]);
@@ -343,6 +391,7 @@ function GameQuiz({ modeKey, onFinish }) {
           unit: question.target.unit,
           expression: question.target.expression,
           detail: question.target.detail,
+          altUnits: question.target.altUnits,
           reason: `선택: ${choice}`,
         },
       ]);
@@ -375,6 +424,7 @@ function GameQuiz({ modeKey, onFinish }) {
             <StatPill label={`점수 ${score}`} />
             <StatPill label={`콤보 ${combo}`} />
             <StatPill label={`타이머 ${timeLeft}s`} />
+            <HomeButton onHome={onHome} />
           </div>
         </div>
 
@@ -385,6 +435,8 @@ function GameQuiz({ modeKey, onFinish }) {
           <div style={{ marginTop: 6, fontSize: 24, fontWeight: 900, lineHeight: 1.35, wordBreak: "break-word" }}>{question.prompt.value}</div>
           <div style={{ ...smallText, marginTop: 14 }}>{question.prompt.secondaryLabel}</div>
           <div style={{ marginTop: 6, fontSize: 14, lineHeight: 1.6, wordBreak: "break-word" }}>{question.prompt.secondaryValue}</div>
+          <div style={{ ...smallText, marginTop: 14 }}>{question.prompt.altLabel}</div>
+          <div style={{ marginTop: 6, fontSize: 14, lineHeight: 1.6, wordBreak: "break-word" }}>{question.prompt.altValue}</div>
           <div style={{ ...smallText, marginTop: 14 }}>개념 설명</div>
           <div style={{ marginTop: 6, fontSize: 14, lineHeight: 1.6 }}>{question.target.explanation}</div>
         </div>
@@ -422,6 +474,7 @@ function GameQuiz({ modeKey, onFinish }) {
                 <div style={{ marginTop: 8, fontSize: 13 }}>단위: <strong>{item.unit}</strong></div>
                 <div style={{ marginTop: 4, fontSize: 13, wordBreak: "break-word" }}>기본량 단위 표현: <strong>{item.expression}</strong></div>
                 <div style={{ marginTop: 4, fontSize: 13, wordBreak: "break-word" }}>정밀 표현: <strong>{item.detail}</strong></div>
+                <div style={{ marginTop: 4, fontSize: 13, wordBreak: "break-word" }}>허용되는 다른 표현: <strong>{item.altUnits}</strong></div>
               </div>
             ))
           )}
@@ -431,7 +484,7 @@ function GameQuiz({ modeKey, onFinish }) {
   );
 }
 
-function CompositionGame() {
+function CompositionGame({ onHome }) {
   const [roundSet, setRoundSet] = useState(makeMatchRound(10));
   const [selected, setSelected] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -454,6 +507,7 @@ function CompositionGame() {
           expression: current.expression,
           unit: current.unit,
           detail: current.detail,
+          altUnits: current.altUnits,
           answer: current.answer.join(", "),
           reason: "시간 초과",
         },
@@ -483,6 +537,7 @@ function CompositionGame() {
           expression: current.expression,
           unit: current.unit,
           detail: current.detail,
+          altUnits: current.altUnits,
           answer: current.answer.join(", "),
           reason: `선택: ${selected.join(", ") || "없음"}`,
         },
@@ -524,6 +579,7 @@ function CompositionGame() {
             <StatPill label={`점수 ${score}`} />
             <StatPill label={`콤보 ${combo}`} />
             <StatPill label={`타이머 ${timeLeft}s`} />
+            <HomeButton onHome={onHome} />
           </div>
         </div>
 
@@ -534,6 +590,8 @@ function CompositionGame() {
           <div style={{ marginTop: 6, fontSize: 15, fontWeight: 700, lineHeight: 1.6, wordBreak: "break-word" }}>{current.expression}</div>
           <div style={{ ...smallText, marginTop: 14 }}>단위</div>
           <div style={{ marginTop: 6, fontSize: 15, fontWeight: 700 }}>{current.unit}</div>
+          <div style={{ ...smallText, marginTop: 14 }}>허용되는 다른 표현</div>
+          <div style={{ marginTop: 6, fontSize: 14, lineHeight: 1.6, wordBreak: "break-word" }}>{current.altUnits}</div>
           <div style={{ ...smallText, marginTop: 14 }}>정밀 표현</div>
           <div style={{ marginTop: 6, fontSize: 14, lineHeight: 1.6, wordBreak: "break-word" }}>{current.detail}</div>
         </div>
@@ -577,8 +635,159 @@ function CompositionGame() {
                 <div style={{ ...smallText, marginTop: 4 }}>{item.reason}</div>
                 <div style={{ marginTop: 8, fontSize: 13, wordBreak: "break-word" }}>기본량 단위 표현: <strong>{item.expression}</strong></div>
                 <div style={{ marginTop: 4, fontSize: 13 }}>단위: <strong>{item.unit}</strong></div>
+                <div style={{ marginTop: 4, fontSize: 13, wordBreak: "break-word" }}>허용되는 다른 표현: <strong>{item.altUnits}</strong></div>
                 <div style={{ marginTop: 4, fontSize: 13, wordBreak: "break-word" }}>정밀 표현: <strong>{item.detail}</strong></div>
                 <div style={{ marginTop: 4, fontSize: 13 }}>정답 기본량: <strong>{item.answer}</strong></div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TileAssemblyGame({ onHome }) {
+  const [roundSet, setRoundSet] = useState(makeTileRound(8));
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [built, setBuilt] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+  const [combo, setCombo] = useState(0);
+  const [wrongNotes, setWrongNotes] = useState([]);
+  const current = roundSet[currentIndex];
+
+  const builtText = built.join(" ");
+
+  const pushTile = (tile) => {
+    if (feedback) return;
+    setBuilt((prev) => [...prev, tile]);
+  };
+
+  const removeLast = () => {
+    if (feedback) return;
+    setBuilt((prev) => prev.slice(0, -1));
+  };
+
+  const resetBuilt = () => {
+    if (feedback) return;
+    setBuilt([]);
+  };
+
+  const submitBuilt = () => {
+    const userAnswer = normalizeExpression(built.join(""));
+    const correctAnswer = normalizeExpression(current.answer);
+    const correct = userAnswer === correctAnswer;
+
+    if (correct) {
+      const nextCombo = combo + 1;
+      setCombo(nextCombo);
+      setScore((prev) => prev + 25 + Math.min(nextCombo * 4, 32));
+    } else {
+      setCombo(0);
+      setWrongNotes((prev) => [
+        ...prev,
+        {
+          name: current.name,
+          userAnswer: built.length === 0 ? "입력 없음" : built.join(" "),
+          answer: current.answer,
+        },
+      ]);
+    }
+
+    setFeedback({ correct, answer: current.answer });
+  };
+
+  const nextQuestion = () => {
+    if (currentIndex === roundSet.length - 1) {
+      setRoundSet(makeTileRound(8));
+      setCurrentIndex(0);
+      setBuilt([]);
+      setFeedback(null);
+      setScore(0);
+      setCombo(0);
+      setWrongNotes([]);
+      return;
+    }
+    setCurrentIndex((prev) => prev + 1);
+    setBuilt([]);
+    setFeedback(null);
+  };
+
+  if (!current) return null;
+
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={cardStyle}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={smallText}>INT 과학학원 조합 게임 II</div>
+            <h2 style={{ ...sectionTitle, marginTop: 6 }}>단위 조립 게임</h2>
+            <div style={{ ...smallText, marginTop: 4 }}>타일을 눌러 유도량의 단위를 직접 만들어 보세요.</div>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <StatPill label={`문제 ${currentIndex + 1}/${roundSet.length}`} />
+            <StatPill label={`점수 ${score}`} />
+            <StatPill label={`콤보 ${combo}`} />
+            <HomeButton onHome={onHome} />
+          </div>
+        </div>
+
+        <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 16, padding: 14, background: combo >= 4 ? "#fffbeb" : "white" }}>
+          <div style={smallText}>문제</div>
+          <div style={{ marginTop: 6, fontSize: 28, fontWeight: 900 }}>{current.name}</div>
+          <div style={{ ...smallText, marginTop: 14 }}>조립 중인 단위</div>
+          <div style={{ marginTop: 6, minHeight: 58, border: "1px dashed #cbd5e1", borderRadius: 12, padding: 12, fontSize: 22, fontWeight: 800, lineHeight: 1.5, wordBreak: "break-word", background: "#f8fafc" }}>
+            {builtText || "여기에 단위가 조립됩니다"}
+          </div>
+          <div style={{ marginTop: 10, fontSize: 12, color: "#64748b" }}>예시: m / s² 는 m, /, s² 를 순서대로 눌러 조립</div>
+        </div>
+
+        <div style={{ marginTop: 14, display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(90px, 1fr))" }}>
+          {tileChoices.map((tile) => (
+            <button key={tile} onClick={() => pushTile(tile)} disabled={Boolean(feedback)} style={{ ...buttonBase, minHeight: 52, fontSize: 18 }}>
+              {tile}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
+          <button onClick={removeLast} disabled={built.length === 0 || Boolean(feedback)} style={{ ...buttonBase, opacity: built.length === 0 || feedback ? 0.6 : 1 }}>
+            하나 지우기
+          </button>
+          <button onClick={resetBuilt} disabled={built.length === 0 || Boolean(feedback)} style={{ ...buttonBase, opacity: built.length === 0 || feedback ? 0.6 : 1 }}>
+            전체 지우기
+          </button>
+          <button onClick={submitBuilt} disabled={built.length === 0 || Boolean(feedback)} style={{ ...primaryButton, opacity: built.length === 0 || feedback ? 0.6 : 1 }}>
+            완성
+          </button>
+        </div>
+
+        {feedback && (
+          <div style={{ marginTop: 14, border: "1px solid #e2e8f0", borderRadius: 16, padding: 14 }}>
+            <div style={{ fontWeight: 900, fontSize: 18 }}>{feedback.correct ? "정답!" : "오답"}</div>
+            <div style={{ marginTop: 8, fontSize: 14, color: "#475569" }}>
+              정답 단위는 <strong>{feedback.answer}</strong> 입니다.
+            </div>
+            <button onClick={nextQuestion} style={{ ...primaryButton, marginTop: 12 }}>
+              {currentIndex === roundSet.length - 1 ? "새 게임 시작" : "다음 문제"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div style={cardStyle}>
+        <div style={smallText}>오답노트</div>
+        <h2 style={{ ...sectionTitle, marginTop: 6 }}>최근 오답</h2>
+        <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+          {wrongNotes.length === 0 ? (
+            <div style={{ fontSize: 13, color: "#64748b" }}>아직 오답이 없습니다.</div>
+          ) : (
+            wrongNotes.slice(-8).reverse().map((item, idx) => (
+              <div key={`${item.name}-${idx}`} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12 }}>
+                <div style={{ fontWeight: 800, fontSize: 16 }}>{item.name}</div>
+                <div style={{ marginTop: 8, fontSize: 13 }}>내가 조립한 답: <strong>{item.userAnswer}</strong></div>
+                <div style={{ marginTop: 4, fontSize: 13 }}>정답: <strong>{item.answer}</strong></div>
               </div>
             ))
           )}
@@ -690,7 +899,7 @@ function FooterSummary() {
       <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800 }}>학생용 웹앱 프로토타입</div>
       <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.7, color: "#475569" }}>
         시작 화면, 닉네임 입력, 난이도 선택(A+B / C / D), 점수 저장, 결과 화면, 최고기록, 퀴즈 타이머,
-        콤보 효과, 오답노트, 기본량 조합 게임까지 포함되어 있습니다.
+        콤보 효과, 오답노트, 기본량 조합 게임 I·II까지 포함되어 있습니다.
       </div>
     </div>
   );
@@ -708,6 +917,11 @@ export default function BasicDerivedQuantitiesGame() {
   useEffect(() => {
     saveState(nickname, highScores);
   }, [nickname, highScores]);
+
+  const goHome = () => {
+    setTab("game");
+    setScreen("start");
+  };
 
   const handleStart = () => setScreen("quiz");
 
@@ -728,6 +942,7 @@ export default function BasicDerivedQuantitiesGame() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <button style={tabButton(tab === "game")} onClick={() => setTab("game")}>메인 게임</button>
           <button style={tabButton(tab === "compose")} onClick={() => setTab("compose")}>조합 게임</button>
+          <button style={tabButton(tab === "compose2")} onClick={() => setTab("compose2")}>조합 게임 II</button>
           <button style={tabButton(tab === "study")} onClick={() => setTab("study")}>기본량 보기</button>
           <button style={tabButton(tab === "flash")} onClick={() => setTab("flash")}>플래시 확인</button>
         </div>
@@ -744,7 +959,7 @@ export default function BasicDerivedQuantitiesGame() {
         )}
 
         {tab === "game" && screen === "quiz" && (
-          <GameQuiz key={`quiz-${selectedMode}-${screen}`} modeKey={selectedMode} onFinish={handleFinishQuiz} />
+          <GameQuiz key={`quiz-${selectedMode}-${screen}`} modeKey={selectedMode} onFinish={handleFinishQuiz} onHome={goHome} />
         )}
 
         {tab === "game" && screen === "result" && lastResult && (
@@ -757,7 +972,8 @@ export default function BasicDerivedQuantitiesGame() {
           />
         )}
 
-        {tab === "compose" && <CompositionGame />}
+        {tab === "compose" && <CompositionGame onHome={goHome} />}
+        {tab === "compose2" && <TileAssemblyGame onHome={goHome} />}
         {tab === "study" && <BaseQuantityStudy />}
         {tab === "flash" && <FlashChallenge />}
 
