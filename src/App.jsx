@@ -249,15 +249,15 @@ function AppHeader({ nickname, highScores }) {
       <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
         <div style={cardStyle}>
           <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.2 }}>INT Science Academy</div>
-          <div style={{ marginTop: 6, fontSize: 15, fontWeight: 800, color: "#334155" }}>INT 과학학원 과학량 게임랩</div>
+          <div style={{ marginTop: 6, fontSize: 15, fontWeight: 800, color: "#334155" }}>INT 과학학원 게임랩 - 기본량과 유도량</div>
           <div style={{ marginTop: 8, fontSize: 13, color: "#475569" }}>
             닉네임 <strong>{nickname || "미입력"}</strong> · 최고 점수 {best}점
           </div>
         </div>
         <div style={darkCardStyle}>
-          <div style={{ fontSize: 13, opacity: 0.9 }}>INT 과학학원 학습 포인트</div>
+          <div style={{ fontSize: 13, opacity: 0.9 }}>INT 과학학원 학습 도우미</div>
           <div style={{ marginTop: 6, fontSize: 28, fontWeight: 900, color: "#fde047" }}>SI System</div>
-          <div style={{ marginTop: 8, fontSize: 13, opacity: 0.92 }}>난이도 선택 · 점수 저장 · 스마트폰 연습</div>
+          <div style={{ marginTop: 8, fontSize: 13, opacity: 0.92 }}>난이도를 선택한 후 게임 시작!!</div>
         </div>
       </div>
     </div>
