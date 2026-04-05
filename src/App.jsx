@@ -1,6 +1,22 @@
+
 import React, { useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "int-science-academy-basic-derived-quantities-game-vite-easy";
+
+const GAME_TYPES = {
+  MAIN: "main",
+  COMPOSE: "compose",
+  COMPOSE2: "compose2",
+};
+
+const GAME_LABELS = {
+  [GAME_TYPES.MAIN]: "메인 게임",
+  [GAME_TYPES.COMPOSE]: "조합 게임",
+  [GAME_TYPES.COMPOSE2]: "조합 게임 II",
+};
+
+const STANDARD_DIFFICULTY_KEY = "standard";
+const STANDARD_DIFFICULTY_LABEL = "기본";
 
 const appStyle = {
   minHeight: "100vh",
@@ -154,22 +170,61 @@ function arraysEqualAsSets(a, b) {
   return [...a].sort().join("|") === [...b].sort().join("|");
 }
 
+function calculateScore(correctCount, wrongCount) {
+  return correctCount * 10 - wrongCount * 2;
+}
+
+function formatElapsedTime(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function getRankingKey(gameType, difficulty) {
+  return `${gameType}__${difficulty}`;
+}
+
+function sortRanking(a, b) {
+  if (b.score !== a.score) return b.score - a.score;
+  if (a.elapsedMs !== b.elapsedMs) return a.elapsedMs - b.elapsedMs;
+  return new Date(a.playedAt).getTime() - new Date(b.playedAt).getTime();
+}
+
 function getSavedState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { nickname: "", highScores: [] };
+    if (!raw) return { nickname: "", rankings: {} };
     const parsed = JSON.parse(raw);
     return {
       nickname: typeof parsed.nickname === "string" ? parsed.nickname : "",
-      highScores: Array.isArray(parsed.highScores) ? parsed.highScores : [],
+      rankings: parsed && typeof parsed.rankings === "object" && parsed.rankings !== null ? parsed.rankings : {},
     };
   } catch {
-    return { nickname: "", highScores: [] };
+    return { nickname: "", rankings: {} };
   }
 }
 
-function saveState(nickname, highScores) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ nickname, highScores }));
+function saveState(nickname, rankings) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ nickname, rankings }));
+}
+
+function addRankingEntry(rankings, entry) {
+  const key = getRankingKey(entry.gameType, entry.difficulty);
+  const current = Array.isArray(rankings[key]) ? rankings[key] : [];
+  return {
+    ...rankings,
+    [key]: [...current, entry].sort(sortRanking).slice(0, 20),
+  };
+}
+
+function getRankingList(rankings, gameType, difficulty) {
+  const key = getRankingKey(gameType, difficulty);
+  return (Array.isArray(rankings[key]) ? rankings[key] : []).slice().sort(sortRanking);
+}
+
+function getTopRanking(rankings, limit = 5) {
+  return Object.values(rankings || {}).flat().sort(sortRanking).slice(0, limit);
 }
 
 function buildPrompt(type, target) {
@@ -241,8 +296,34 @@ function ProgressBar({ value }) {
   );
 }
 
-function AppHeader({ nickname, highScores }) {
-  const best = highScores[0]?.score ?? 0;
+function RankingList({ ranking, emptyText = "아직 저장된 기록이 없습니다." }) {
+  if (!ranking.length) {
+    return <div style={{ fontSize: 13, color: "#64748b" }}>{emptyText}</div>;
+  }
+
+  return (
+    <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+      {ranking.map((item, idx) => (
+        <div key={`${item.nickname}-${item.score}-${item.playedAt}-${idx}`} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, display: "flex", justifyContent: "space-between", gap: 10 }}>
+          <div>
+            <div style={{ fontWeight: 800 }}>{idx + 1}. {item.nickname || "익명"}</div>
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+              {GAME_LABELS[item.gameType] || "게임"} · 난이도 {item.difficultyLabel} · {formatElapsedTime(item.elapsedMs)}
+            </div>
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+              정답 {item.correctCount} · 오답 {item.wrongCount} · {item.dateLabel}
+            </div>
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 900 }}>{item.score}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AppHeader({ nickname, rankings }) {
+  const allRankings = getTopRanking(rankings, 999);
+  const best = allRankings[0]?.score ?? 0;
   return (
     <div style={{ display: "grid", gap: 14 }}>
       <div style={badgeStyle}>INT 과학학원 · 기본량 · 유도량 학습 게임</div>
@@ -257,14 +338,14 @@ function AppHeader({ nickname, highScores }) {
         <div style={darkCardStyle}>
           <div style={{ fontSize: 13, opacity: 0.9 }}>INT 과학학원 학습 도우미</div>
           <div style={{ marginTop: 6, fontSize: 28, fontWeight: 900, color: "#fde047" }}>SI System</div>
-          <div style={{ marginTop: 8, fontSize: 13, opacity: 0.92 }}>난이도를 선택한 후 게임 시작!!</div>
+          <div style={{ marginTop: 8, fontSize: 13, opacity: 0.92 }}>게임별 · 난이도별 랭킹 지원</div>
         </div>
       </div>
     </div>
   );
 }
 
-function StartScreen({ nickname, setNickname, selectedMode, setSelectedMode, onStart, highScores }) {
+function StartScreen({ nickname, setNickname, selectedMode, setSelectedMode, onStart, selectedRanking }) {
   return (
     <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
       <div style={cardStyle}>
@@ -308,22 +389,8 @@ function StartScreen({ nickname, setNickname, selectedMode, setSelectedMode, onS
 
       <div style={cardStyle}>
         <div style={smallText}>INT 최고 기록</div>
-        <h2 style={{ ...sectionTitle, marginTop: 8 }}>랭킹</h2>
-        <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
-          {highScores.length === 0 ? (
-            <div style={{ fontSize: 13, color: "#64748b" }}>아직 저장된 기록이 없습니다.</div>
-          ) : (
-            highScores.slice(0, 5).map((item, idx) => (
-              <div key={`${item.nickname}-${item.score}-${idx}`} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, display: "flex", justifyContent: "space-between", gap: 10 }}>
-                <div>
-                  <div style={{ fontWeight: 800 }}>{idx + 1}. {item.nickname || "익명"}</div>
-                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>INT 과학학원 · 난이도 {item.mode} · {item.date}</div>
-                </div>
-                <div style={{ fontSize: 22, fontWeight: 900 }}>{item.score}</div>
-              </div>
-            ))
-          )}
-        </div>
+        <h2 style={{ ...sectionTitle, marginTop: 8 }}>메인 게임 · 난이도 {difficultyModes[selectedMode]?.label || selectedMode} 랭킹</h2>
+        <RankingList ranking={selectedRanking.slice(0, 5)} />
       </div>
     </div>
   );
@@ -345,18 +412,21 @@ function GameQuiz({ modeKey, onFinish, onHome }) {
   const mode = difficultyModes[modeKey] ?? difficultyModes.AB;
   const maxRounds = 20;
   const [question, setQuestion] = useState(() => makeQuizQuestion(modeKey));
-  const [score, setScore] = useState(0);
   const [round, setRound] = useState(1);
   const [feedback, setFeedback] = useState(null);
-  const [combo, setCombo] = useState(0);
   const [timeLeft, setTimeLeft] = useState(mode.timeLimit);
   const [wrongNotes, setWrongNotes] = useState([]);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
+  const [startedAt] = useState(() => Date.now());
+
+  const score = calculateScore(correctCount, wrongCount);
 
   useEffect(() => {
     if (feedback) return;
     if (timeLeft <= 0) {
       setFeedback({ correct: false, answer: question.correctOption, timeout: true });
-      setCombo(0);
+      setWrongCount((prev) => prev + 1);
       setWrongNotes((prev) => [
         ...prev,
         {
@@ -379,11 +449,9 @@ function GameQuiz({ modeKey, onFinish, onHome }) {
   const handleChoice = (choice) => {
     const correct = choice === question.correctOption;
     if (correct) {
-      const nextCombo = combo + 1;
-      setCombo(nextCombo);
-      setScore((s) => s + 10 + Math.min(nextCombo * 3, 30) + timeLeft);
+      setCorrectCount((prev) => prev + 1);
     } else {
-      setCombo(0);
+      setWrongCount((prev) => prev + 1);
       setWrongNotes((prev) => [
         ...prev,
         {
@@ -401,7 +469,16 @@ function GameQuiz({ modeKey, onFinish, onHome }) {
 
   const nextRound = () => {
     if (round >= maxRounds) {
-      onFinish({ score, wrongNotes, modeKey, modeLabel: mode.label });
+      onFinish({
+        gameType: GAME_TYPES.MAIN,
+        difficulty: modeKey,
+        difficultyLabel: mode.label,
+        score,
+        wrongNotes,
+        correctCount,
+        wrongCount,
+        elapsedMs: Date.now() - startedAt,
+      });
       return;
     }
     setQuestion(makeQuizQuestion(modeKey));
@@ -422,7 +499,8 @@ function GameQuiz({ modeKey, onFinish, onHome }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <StatPill label={`라운드 ${round}/${maxRounds}`} />
             <StatPill label={`점수 ${score}`} />
-            <StatPill label={`콤보 ${combo}`} />
+            <StatPill label={`정답 ${correctCount}`} />
+            <StatPill label={`오답 ${wrongCount}`} />
             <StatPill label={`타이머 ${timeLeft}s`} />
             <HomeButton onHome={onHome} />
           </div>
@@ -430,7 +508,7 @@ function GameQuiz({ modeKey, onFinish, onHome }) {
 
         <div style={{ marginTop: 14 }}><ProgressBar value={progress} /></div>
 
-        <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 16, padding: 14, background: combo >= 5 ? "#fffbeb" : "white" }}>
+        <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 16, padding: 14, background: "white" }}>
           <div style={smallText}>{question.prompt.label}</div>
           <div style={{ marginTop: 6, fontSize: 24, fontWeight: 900, lineHeight: 1.35, wordBreak: "break-word" }}>{question.prompt.value}</div>
           <div style={{ ...smallText, marginTop: 14 }}>{question.prompt.secondaryLabel}</div>
@@ -484,22 +562,28 @@ function GameQuiz({ modeKey, onFinish, onHome }) {
   );
 }
 
-function CompositionGame({ onHome }) {
-  const [roundSet, setRoundSet] = useState(makeMatchRound(10));
+function CompositionGame({ onHome, saveRankingEntry, rankings }) {
+  const initialRoundSet = () => makeMatchRound(10);
+  const [roundSet, setRoundSet] = useState(initialRoundSet);
   const [selected, setSelected] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [combo, setCombo] = useState(0);
   const [result, setResult] = useState(null);
   const [timeLeft, setTimeLeft] = useState(20);
   const [wrongNotes, setWrongNotes] = useState([]);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
+  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [finishedSummary, setFinishedSummary] = useState(null);
+
   const current = roundSet[currentIndex];
+  const score = calculateScore(correctCount, wrongCount);
+  const currentRanking = getRankingList(rankings, GAME_TYPES.COMPOSE, STANDARD_DIFFICULTY_KEY);
 
   useEffect(() => {
-    if (!current || result !== null) return;
+    if (!current || result !== null || finishedSummary) return;
     if (timeLeft <= 0) {
       setResult(false);
-      setCombo(0);
+      setWrongCount((prev) => prev + 1);
       setWrongNotes((prev) => [
         ...prev,
         {
@@ -516,7 +600,7 @@ function CompositionGame({ onHome }) {
     }
     const timer = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearTimeout(timer);
-  }, [timeLeft, result, current]);
+  }, [timeLeft, result, current, finishedSummary]);
 
   const toggle = (name) => {
     setSelected((prev) => (prev.includes(name) ? prev.filter((value) => value !== name) : [...prev, name]));
@@ -525,11 +609,9 @@ function CompositionGame({ onHome }) {
   const submit = () => {
     const correct = arraysEqualAsSets(selected, current.answer);
     if (correct) {
-      const nextCombo = combo + 1;
-      setCombo(nextCombo);
-      setScore((s) => s + 20 + Math.min(nextCombo * 3, 30) + timeLeft);
+      setCorrectCount((prev) => prev + 1);
     } else {
-      setCombo(0);
+      setWrongCount((prev) => prev + 1);
       setWrongNotes((prev) => [
         ...prev,
         {
@@ -546,16 +628,33 @@ function CompositionGame({ onHome }) {
     setResult(correct);
   };
 
+  const resetGame = () => {
+    setRoundSet(initialRoundSet());
+    setSelected([]);
+    setCurrentIndex(0);
+    setResult(null);
+    setTimeLeft(20);
+    setWrongNotes([]);
+    setCorrectCount(0);
+    setWrongCount(0);
+    setStartedAt(Date.now());
+    setFinishedSummary(null);
+  };
+
   const next = () => {
     if (currentIndex === roundSet.length - 1) {
-      setRoundSet(makeMatchRound(12));
-      setSelected([]);
-      setCurrentIndex(0);
-      setScore(0);
-      setCombo(0);
-      setResult(null);
-      setTimeLeft(20);
-      setWrongNotes([]);
+      const finalResult = {
+        gameType: GAME_TYPES.COMPOSE,
+        difficulty: STANDARD_DIFFICULTY_KEY,
+        difficultyLabel: STANDARD_DIFFICULTY_LABEL,
+        score,
+        correctCount,
+        wrongCount,
+        elapsedMs: Date.now() - startedAt,
+        wrongNotes,
+      };
+      const saved = saveRankingEntry(finalResult);
+      setFinishedSummary({ ...finalResult, ranking: saved.ranking });
       return;
     }
     setSelected([]);
@@ -564,7 +663,35 @@ function CompositionGame({ onHome }) {
     setTimeLeft(20);
   };
 
-  if (!current) return null;
+  if (!current && !finishedSummary) return null;
+
+  if (finishedSummary) {
+    return (
+      <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+        <div style={cardStyle}>
+          <div style={smallText}>INT 과학학원 조합 게임 결과</div>
+          <h2 style={{ ...sectionTitle, marginTop: 6 }}>기본량 조합 완료</h2>
+          <div style={{ ...darkCardStyle, marginTop: 14 }}>
+            <div style={{ fontSize: 13, opacity: 0.9 }}>최종 점수</div>
+            <div style={{ marginTop: 6, fontSize: 44, fontWeight: 900, color: "#fde047" }}>{finishedSummary.score}</div>
+            <div style={{ marginTop: 8, fontSize: 13, opacity: 0.92 }}>
+              정답 {finishedSummary.correctCount} · 오답 {finishedSummary.wrongCount} · {formatElapsedTime(finishedSummary.elapsedMs)}
+            </div>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
+            <button onClick={resetGame} style={primaryButton}>다시 하기</button>
+            <button onClick={onHome} style={buttonBase}>홈으로</button>
+          </div>
+        </div>
+
+        <div style={cardStyle}>
+          <div style={smallText}>INT 랭킹</div>
+          <h2 style={{ ...sectionTitle, marginTop: 6 }}>조합 게임 랭킹</h2>
+          <RankingList ranking={finishedSummary.ranking.slice(0, 7)} emptyText="아직 기록이 없습니다." />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
@@ -577,13 +704,14 @@ function CompositionGame({ onHome }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <StatPill label={`문제 ${currentIndex + 1}/${roundSet.length}`} />
             <StatPill label={`점수 ${score}`} />
-            <StatPill label={`콤보 ${combo}`} />
+            <StatPill label={`정답 ${correctCount}`} />
+            <StatPill label={`오답 ${wrongCount}`} />
             <StatPill label={`타이머 ${timeLeft}s`} />
             <HomeButton onHome={onHome} />
           </div>
         </div>
 
-        <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 16, padding: 14, background: combo >= 5 ? "#fffbeb" : "white" }}>
+        <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 16, padding: 14, background: "white" }}>
           <div style={smallText}>유도량</div>
           <div style={{ marginTop: 6, fontSize: 26, fontWeight: 900, lineHeight: 1.3, wordBreak: "break-word" }}>{current.name}</div>
           <div style={{ ...smallText, marginTop: 14 }}>기본량 단위 표현</div>
@@ -616,61 +744,74 @@ function CompositionGame({ onHome }) {
             <div style={{ fontWeight: 900, fontSize: 18 }}>{result ? "정답!" : "오답"}</div>
             <div style={{ marginTop: 8, fontSize: 14, color: "#475569" }}>정답 기본량: <strong>{current.answer.join(", ")}</strong></div>
             <button onClick={next} style={{ ...primaryButton, marginTop: 12 }}>
-              {currentIndex === roundSet.length - 1 ? "새 게임 시작" : "다음 문제"}
+              {currentIndex === roundSet.length - 1 ? "결과 보기" : "다음 문제"}
             </button>
           </div>
         )}
       </div>
 
-      <div style={cardStyle}>
-        <div style={smallText}>오답노트</div>
-        <h2 style={{ ...sectionTitle, marginTop: 6 }}>최근 오답</h2>
-        <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
-          {wrongNotes.length === 0 ? (
-            <div style={{ fontSize: 13, color: "#64748b" }}>아직 오답이 없습니다.</div>
-          ) : (
-            wrongNotes.slice(-8).reverse().map((item, idx) => (
-              <div key={`${item.name}-${idx}`} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12 }}>
-                <div style={{ fontWeight: 800, fontSize: 16 }}>{item.name}</div>
-                <div style={{ ...smallText, marginTop: 4 }}>{item.reason}</div>
-                <div style={{ marginTop: 8, fontSize: 13, wordBreak: "break-word" }}>기본량 단위 표현: <strong>{item.expression}</strong></div>
-                <div style={{ marginTop: 4, fontSize: 13 }}>단위: <strong>{item.unit}</strong></div>
-                <div style={{ marginTop: 4, fontSize: 13, wordBreak: "break-word" }}>허용되는 다른 표현: <strong>{item.altUnits}</strong></div>
-                <div style={{ marginTop: 4, fontSize: 13, wordBreak: "break-word" }}>정밀 표현: <strong>{item.detail}</strong></div>
-                <div style={{ marginTop: 4, fontSize: 13 }}>정답 기본량: <strong>{item.answer}</strong></div>
-              </div>
-            ))
-          )}
+      <div style={{ display: "grid", gap: 14, gridTemplateColumns: "1.5fr 1fr" }}>
+        <div style={cardStyle}>
+          <div style={smallText}>오답노트</div>
+          <h2 style={{ ...sectionTitle, marginTop: 6 }}>최근 오답</h2>
+          <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+            {wrongNotes.length === 0 ? (
+              <div style={{ fontSize: 13, color: "#64748b" }}>아직 오답이 없습니다.</div>
+            ) : (
+              wrongNotes.slice(-8).reverse().map((item, idx) => (
+                <div key={`${item.name}-${idx}`} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12 }}>
+                  <div style={{ fontWeight: 800, fontSize: 16 }}>{item.name}</div>
+                  <div style={{ ...smallText, marginTop: 4 }}>{item.reason}</div>
+                  <div style={{ marginTop: 8, fontSize: 13, wordBreak: "break-word" }}>기본량 단위 표현: <strong>{item.expression}</strong></div>
+                  <div style={{ marginTop: 4, fontSize: 13 }}>단위: <strong>{item.unit}</strong></div>
+                  <div style={{ marginTop: 4, fontSize: 13, wordBreak: "break-word" }}>허용되는 다른 표현: <strong>{item.altUnits}</strong></div>
+                  <div style={{ marginTop: 4, fontSize: 13, wordBreak: "break-word" }}>정밀 표현: <strong>{item.detail}</strong></div>
+                  <div style={{ marginTop: 4, fontSize: 13 }}>정답 기본량: <strong>{item.answer}</strong></div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div style={cardStyle}>
+          <div style={smallText}>현재 랭킹</div>
+          <h2 style={{ ...sectionTitle, marginTop: 6 }}>조합 게임 Top 5</h2>
+          <RankingList ranking={currentRanking.slice(0, 5)} />
         </div>
       </div>
     </div>
   );
 }
 
-function TileAssemblyGame({ onHome }) {
-  const [roundSet, setRoundSet] = useState(makeTileRound(8));
+function TileAssemblyGame({ onHome, saveRankingEntry, rankings }) {
+  const initialRoundSet = () => makeTileRound(8);
+  const [roundSet, setRoundSet] = useState(initialRoundSet);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [built, setBuilt] = useState([]);
   const [feedback, setFeedback] = useState(null);
-  const [score, setScore] = useState(0);
-  const [combo, setCombo] = useState(0);
   const [wrongNotes, setWrongNotes] = useState([]);
-  const current = roundSet[currentIndex];
+  const [correctCount, setCorrectCount] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
+  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [finishedSummary, setFinishedSummary] = useState(null);
 
+  const current = roundSet[currentIndex];
   const builtText = built.join(" ");
+  const score = calculateScore(correctCount, wrongCount);
+  const currentRanking = getRankingList(rankings, GAME_TYPES.COMPOSE2, STANDARD_DIFFICULTY_KEY);
 
   const pushTile = (tile) => {
-    if (feedback) return;
+    if (feedback || finishedSummary) return;
     setBuilt((prev) => [...prev, tile]);
   };
 
   const removeLast = () => {
-    if (feedback) return;
+    if (feedback || finishedSummary) return;
     setBuilt((prev) => prev.slice(0, -1));
   };
 
   const resetBuilt = () => {
-    if (feedback) return;
+    if (feedback || finishedSummary) return;
     setBuilt([]);
   };
 
@@ -680,11 +821,9 @@ function TileAssemblyGame({ onHome }) {
     const correct = userAnswer === correctAnswer;
 
     if (correct) {
-      const nextCombo = combo + 1;
-      setCombo(nextCombo);
-      setScore((prev) => prev + 25 + Math.min(nextCombo * 4, 32));
+      setCorrectCount((prev) => prev + 1);
     } else {
-      setCombo(0);
+      setWrongCount((prev) => prev + 1);
       setWrongNotes((prev) => [
         ...prev,
         {
@@ -698,15 +837,32 @@ function TileAssemblyGame({ onHome }) {
     setFeedback({ correct, answer: current.answer });
   };
 
+  const resetGame = () => {
+    setRoundSet(initialRoundSet());
+    setCurrentIndex(0);
+    setBuilt([]);
+    setFeedback(null);
+    setWrongNotes([]);
+    setCorrectCount(0);
+    setWrongCount(0);
+    setStartedAt(Date.now());
+    setFinishedSummary(null);
+  };
+
   const nextQuestion = () => {
     if (currentIndex === roundSet.length - 1) {
-      setRoundSet(makeTileRound(8));
-      setCurrentIndex(0);
-      setBuilt([]);
-      setFeedback(null);
-      setScore(0);
-      setCombo(0);
-      setWrongNotes([]);
+      const finalResult = {
+        gameType: GAME_TYPES.COMPOSE2,
+        difficulty: STANDARD_DIFFICULTY_KEY,
+        difficultyLabel: STANDARD_DIFFICULTY_LABEL,
+        score,
+        correctCount,
+        wrongCount,
+        elapsedMs: Date.now() - startedAt,
+        wrongNotes,
+      };
+      const saved = saveRankingEntry(finalResult);
+      setFinishedSummary({ ...finalResult, ranking: saved.ranking });
       return;
     }
     setCurrentIndex((prev) => prev + 1);
@@ -714,7 +870,35 @@ function TileAssemblyGame({ onHome }) {
     setFeedback(null);
   };
 
-  if (!current) return null;
+  if (!current && !finishedSummary) return null;
+
+  if (finishedSummary) {
+    return (
+      <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+        <div style={cardStyle}>
+          <div style={smallText}>INT 과학학원 조합 게임 II 결과</div>
+          <h2 style={{ ...sectionTitle, marginTop: 6 }}>단위 조립 완료</h2>
+          <div style={{ ...darkCardStyle, marginTop: 14 }}>
+            <div style={{ fontSize: 13, opacity: 0.9 }}>최종 점수</div>
+            <div style={{ marginTop: 6, fontSize: 44, fontWeight: 900, color: "#fde047" }}>{finishedSummary.score}</div>
+            <div style={{ marginTop: 8, fontSize: 13, opacity: 0.92 }}>
+              정답 {finishedSummary.correctCount} · 오답 {finishedSummary.wrongCount} · {formatElapsedTime(finishedSummary.elapsedMs)}
+            </div>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
+            <button onClick={resetGame} style={primaryButton}>다시 하기</button>
+            <button onClick={onHome} style={buttonBase}>홈으로</button>
+          </div>
+        </div>
+
+        <div style={cardStyle}>
+          <div style={smallText}>INT 랭킹</div>
+          <h2 style={{ ...sectionTitle, marginTop: 6 }}>조합 게임 II 랭킹</h2>
+          <RankingList ranking={finishedSummary.ranking.slice(0, 7)} emptyText="아직 기록이 없습니다." />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
@@ -728,12 +912,13 @@ function TileAssemblyGame({ onHome }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             <StatPill label={`문제 ${currentIndex + 1}/${roundSet.length}`} />
             <StatPill label={`점수 ${score}`} />
-            <StatPill label={`콤보 ${combo}`} />
+            <StatPill label={`정답 ${correctCount}`} />
+            <StatPill label={`오답 ${wrongCount}`} />
             <HomeButton onHome={onHome} />
           </div>
         </div>
 
-        <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 16, padding: 14, background: combo >= 4 ? "#fffbeb" : "white" }}>
+        <div style={{ marginTop: 16, border: "1px solid #e2e8f0", borderRadius: 16, padding: 14, background: "white" }}>
           <div style={smallText}>문제</div>
           <div style={{ marginTop: 6, fontSize: 28, fontWeight: 900 }}>{current.name}</div>
           <div style={{ ...smallText, marginTop: 14 }}>조립 중인 단위</div>
@@ -770,27 +955,35 @@ function TileAssemblyGame({ onHome }) {
               정답 단위는 <strong>{feedback.answer}</strong> 입니다.
             </div>
             <button onClick={nextQuestion} style={{ ...primaryButton, marginTop: 12 }}>
-              {currentIndex === roundSet.length - 1 ? "새 게임 시작" : "다음 문제"}
+              {currentIndex === roundSet.length - 1 ? "결과 보기" : "다음 문제"}
             </button>
           </div>
         )}
       </div>
 
-      <div style={cardStyle}>
-        <div style={smallText}>오답노트</div>
-        <h2 style={{ ...sectionTitle, marginTop: 6 }}>최근 오답</h2>
-        <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
-          {wrongNotes.length === 0 ? (
-            <div style={{ fontSize: 13, color: "#64748b" }}>아직 오답이 없습니다.</div>
-          ) : (
-            wrongNotes.slice(-8).reverse().map((item, idx) => (
-              <div key={`${item.name}-${idx}`} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12 }}>
-                <div style={{ fontWeight: 800, fontSize: 16 }}>{item.name}</div>
-                <div style={{ marginTop: 8, fontSize: 13 }}>내가 조립한 답: <strong>{item.userAnswer}</strong></div>
-                <div style={{ marginTop: 4, fontSize: 13 }}>정답: <strong>{item.answer}</strong></div>
-              </div>
-            ))
-          )}
+      <div style={{ display: "grid", gap: 14, gridTemplateColumns: "1.5fr 1fr" }}>
+        <div style={cardStyle}>
+          <div style={smallText}>오답노트</div>
+          <h2 style={{ ...sectionTitle, marginTop: 6 }}>최근 오답</h2>
+          <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+            {wrongNotes.length === 0 ? (
+              <div style={{ fontSize: 13, color: "#64748b" }}>아직 오답이 없습니다.</div>
+            ) : (
+              wrongNotes.slice(-8).reverse().map((item, idx) => (
+                <div key={`${item.name}-${idx}`} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12 }}>
+                  <div style={{ fontWeight: 800, fontSize: 16 }}>{item.name}</div>
+                  <div style={{ marginTop: 8, fontSize: 13 }}>내가 조립한 답: <strong>{item.userAnswer}</strong></div>
+                  <div style={{ marginTop: 4, fontSize: 13 }}>정답: <strong>{item.answer}</strong></div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div style={cardStyle}>
+          <div style={smallText}>현재 랭킹</div>
+          <h2 style={{ ...sectionTitle, marginTop: 6 }}>조합 게임 II Top 5</h2>
+          <RankingList ranking={currentRanking.slice(0, 5)} />
         </div>
       </div>
     </div>
@@ -852,7 +1045,7 @@ function FlashChallenge() {
   );
 }
 
-function ResultScreen({ nickname, result, onRestart, onBackToStart, ranking }) {
+function ResultScreen({ nickname, result, onRestart, onBackToStart }) {
   return (
     <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
       <div style={cardStyle}>
@@ -861,7 +1054,9 @@ function ResultScreen({ nickname, result, onRestart, onBackToStart, ranking }) {
         <div style={{ ...darkCardStyle, marginTop: 14 }}>
           <div style={{ fontSize: 13, opacity: 0.9 }}>INT 과학학원 최종 점수</div>
           <div style={{ marginTop: 6, fontSize: 44, fontWeight: 900, color: "#fde047" }}>{result.score}</div>
-          <div style={{ marginTop: 8, fontSize: 13, opacity: 0.92 }}>난이도 {result.modeLabel} · 오답 {result.wrongNotes.length}개</div>
+          <div style={{ marginTop: 8, fontSize: 13, opacity: 0.92 }}>
+            난이도 {result.difficultyLabel} · 정답 {result.correctCount} · 오답 {result.wrongCount} · {formatElapsedTime(result.elapsedMs)}
+          </div>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
           <button onClick={onRestart} style={primaryButton}>같은 난이도로 다시</button>
@@ -870,23 +1065,9 @@ function ResultScreen({ nickname, result, onRestart, onBackToStart, ranking }) {
       </div>
 
       <div style={cardStyle}>
-        <div style={smallText}>INT 랭킹 느낌</div>
-        <h2 style={{ ...sectionTitle, marginTop: 6 }}>최고 기록</h2>
-        <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
-          {ranking.length === 0 ? (
-            <div style={{ fontSize: 13, color: "#64748b" }}>기록이 없습니다.</div>
-          ) : (
-            ranking.slice(0, 7).map((item, idx) => (
-              <div key={`${item.nickname}-${item.score}-${idx}`} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, display: "flex", justifyContent: "space-between", gap: 10 }}>
-                <div>
-                  <div style={{ fontWeight: 800 }}>{idx + 1}. {item.nickname || "익명"}</div>
-                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>INT 과학학원 · 난이도 {item.mode} · {item.date}</div>
-                </div>
-                <div style={{ fontSize: 22, fontWeight: 900 }}>{item.score}</div>
-              </div>
-            ))
-          )}
-        </div>
+        <div style={smallText}>INT 랭킹</div>
+        <h2 style={{ ...sectionTitle, marginTop: 6 }}>{GAME_LABELS[result.gameType]} · 난이도 {result.difficultyLabel}</h2>
+        <RankingList ranking={(result.ranking || []).slice(0, 7)} emptyText="기록이 없습니다." />
       </div>
     </div>
   );
@@ -898,8 +1079,8 @@ function FooterSummary() {
       <div style={smallText}>INT 과학학원 현재 포함 기능</div>
       <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800 }}>학생용 웹앱 프로토타입</div>
       <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.7, color: "#475569" }}>
-        시작 화면, 닉네임 입력, 난이도 선택(A+B / C / D), 점수 저장, 결과 화면, 최고기록, 퀴즈 타이머,
-        콤보 효과, 오답노트, 기본량 조합 게임 I·II까지 포함되어 있습니다.
+        시작 화면, 닉네임 입력, 난이도 선택(A+B / C / D), 게임별·난이도별 랭킹, 결과 화면, 퀴즈 타이머,
+        오답노트, 기본량 조합 게임 I·II, 시간 기반 동점 판정까지 포함되어 있습니다.
       </div>
     </div>
   );
@@ -908,15 +1089,41 @@ function FooterSummary() {
 export default function BasicDerivedQuantitiesGame() {
   const saved = getSavedState();
   const [nickname, setNickname] = useState(saved.nickname);
-  const [highScores, setHighScores] = useState(saved.highScores);
+  const [rankings, setRankings] = useState(saved.rankings);
   const [selectedMode, setSelectedMode] = useState("AB");
   const [screen, setScreen] = useState("start");
   const [lastResult, setLastResult] = useState(null);
   const [tab, setTab] = useState("game");
 
   useEffect(() => {
-    saveState(nickname, highScores);
-  }, [nickname, highScores]);
+    saveState(nickname, rankings);
+  }, [nickname, rankings]);
+
+  const saveRankingEntry = (result) => {
+    const playedAt = new Date().toISOString();
+    const dateLabel = new Date().toLocaleDateString("ko-KR");
+
+    const entry = {
+      nickname: nickname || "익명",
+      gameType: result.gameType,
+      difficulty: result.difficulty,
+      difficultyLabel: result.difficultyLabel,
+      score: result.score,
+      correctCount: result.correctCount,
+      wrongCount: result.wrongCount,
+      elapsedMs: result.elapsedMs,
+      playedAt,
+      dateLabel,
+    };
+
+    const nextRankings = addRankingEntry(rankings, entry);
+    setRankings(nextRankings);
+
+    return {
+      entry,
+      ranking: getRankingList(nextRankings, result.gameType, result.difficulty),
+    };
+  };
 
   const goHome = () => {
     setTab("game");
@@ -926,18 +1133,15 @@ export default function BasicDerivedQuantitiesGame() {
   const handleStart = () => setScreen("quiz");
 
   const handleFinishQuiz = (result) => {
-    const date = new Date().toLocaleDateString("ko-KR");
-    const entry = { nickname: nickname || "익명", score: result.score, mode: result.modeLabel, date };
-    const nextScores = [...highScores, entry].sort((a, b) => b.score - a.score).slice(0, 20);
-    setHighScores(nextScores);
-    setLastResult(result);
+    const savedResult = saveRankingEntry(result);
+    setLastResult({ ...result, ranking: savedResult.ranking });
     setScreen("result");
   };
 
   return (
     <div style={appStyle}>
       <div style={containerStyle}>
-        <AppHeader nickname={nickname} highScores={highScores} />
+        <AppHeader nickname={nickname} rankings={rankings} />
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <button style={tabButton(tab === "game")} onClick={() => setTab("game")}>메인 게임</button>
@@ -954,7 +1158,7 @@ export default function BasicDerivedQuantitiesGame() {
             selectedMode={selectedMode}
             setSelectedMode={setSelectedMode}
             onStart={handleStart}
-            highScores={highScores}
+            selectedRanking={getRankingList(rankings, GAME_TYPES.MAIN, selectedMode)}
           />
         )}
 
@@ -966,14 +1170,13 @@ export default function BasicDerivedQuantitiesGame() {
           <ResultScreen
             nickname={nickname}
             result={lastResult}
-            ranking={highScores}
             onRestart={() => setScreen("quiz")}
             onBackToStart={() => setScreen("start")}
           />
         )}
 
-        {tab === "compose" && <CompositionGame onHome={goHome} />}
-        {tab === "compose2" && <TileAssemblyGame onHome={goHome} />}
+        {tab === "compose" && <CompositionGame onHome={goHome} saveRankingEntry={saveRankingEntry} rankings={rankings} />}
+        {tab === "compose2" && <TileAssemblyGame onHome={goHome} saveRankingEntry={saveRankingEntry} rankings={rankings} />}
         {tab === "study" && <BaseQuantityStudy />}
         {tab === "flash" && <FlashChallenge />}
 
